@@ -1,4 +1,4 @@
-# expiremap
+# expiremap ![](https://github.com/vvatanabe/expiremap/workflows/Go/badge.svg)
 
 synchronization map with expiration date (extended sync.Map)
 
