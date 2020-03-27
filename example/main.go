@@ -1,18 +1,3 @@
-# expiremap
-
-synchronization map with expiration date (extended sync.Map)
-
-## Installation
-
-This package can be installed with the go get command:
-
-```
-$ go get github.com/vvatanabe/expiremap
-```
-
-## Usage
-
-```go
 package main
 
 import (
@@ -51,8 +36,3 @@ func main() {
 		fmt.Println("key2 expired")
 	}
 }
-```
-
-## Bugs and Feedback
-
-For bugs, questions and discussions please use the Github Issues.
