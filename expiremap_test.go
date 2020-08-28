@@ -11,7 +11,10 @@ func TestMap_Store_And_Load_And_Expired(t *testing.T) {
 	wantKey := "foo"
 	wantValue := "bar"
 
-	m.StoreWithExpire(wantKey, wantValue, time.Second/2)
+	var expired bool
+	m.Store(wantKey, wantValue, Expire(time.Second/2), ExpiredFunc(func() {
+		expired = true
+	}))
 	v, ok := m.Load(wantKey)
 	if !ok {
 		t.Errorf("Map.Load() not exixts key=%s", wantKey)
@@ -21,12 +24,21 @@ func TestMap_Store_And_Load_And_Expired(t *testing.T) {
 		t.Errorf("Map.Load() gotValue = %v, want %v", got, wantValue)
 		return
 	}
+	if expired {
+		t.Error("ExpiredFunc() executed before the expiration date")
+		return
+	}
 
 	time.Sleep(time.Second)
 
 	_, ok = m.Load(wantKey)
 	if ok {
 		t.Errorf("Map.Load() exixts key=%s", wantKey)
+		return
+	}
+
+	if !expired {
+		t.Error("ExpiredFunc() did not execute after the expiration date")
 		return
 	}
 }
@@ -64,7 +76,10 @@ func TestMap_LoadOrStore_And_Load_And_Expired(t *testing.T) {
 	wantKey := "foo"
 	wantValue := "bar"
 
-	m.LoadOrStoreWithExpire(wantKey, wantValue, time.Second/2)
+	var expired bool
+	m.LoadOrStore(wantKey, wantValue, Expire(time.Second/2), ExpiredFunc(func() {
+		expired = true
+	}))
 	v, ok := m.Load(wantKey)
 	if !ok {
 		t.Errorf("Map.Load() not exixts key=%s", wantKey)
@@ -74,12 +89,21 @@ func TestMap_LoadOrStore_And_Load_And_Expired(t *testing.T) {
 		t.Errorf("Map.Load() gotValue = %v, want %v", got, wantValue)
 		return
 	}
+	if expired {
+		t.Error("ExpiredFunc() executed before the expiration date")
+		return
+	}
 
 	time.Sleep(time.Second)
 
 	_, ok = m.Load(wantKey)
 	if ok {
 		t.Errorf("Map.Load() exixts key=%s", wantKey)
+		return
+	}
+
+	if !expired {
+		t.Error("ExpiredFunc() did not execute after the expiration date")
 		return
 	}
 }

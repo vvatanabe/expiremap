@@ -30,16 +30,19 @@ func (m *Map) Load(key interface{}) (value interface{}, ok bool) {
 // LoadOrStore returns the existing value in expiration for the key
 // if present.
 // Otherwise, it stores with expiration and returns the given value.
-func (m *Map) LoadOrStore(key, value interface{}) (actual interface{}, loaded bool) {
-	return m.LoadOrStoreWithExpire(key, value, m.defaultExpire)
-}
-
-func (m *Map) LoadOrStoreWithExpire(key, value interface{}, expire time.Duration) (actual interface{}, loaded bool) {
+func (m *Map) LoadOrStore(key, value interface{}, opts ...Option) (actual interface{}, loaded bool) {
 	actual, loaded = m.syncMap.LoadOrStore(key, value)
 	if !loaded {
-		m.setExpire(key, expire)
+		opt := &Options{
+			Expire:      m.defaultExpire,
+			ExpiredFunc: func() {},
+		}
+		for _, optFunc := range opts {
+			optFunc(opt)
+		}
+		m.setExpire(key, opt.Expire, opt.ExpiredFunc)
 	}
-	return
+	return actual, loaded
 }
 
 // Range calls f sequentially for each key and value in expiration
@@ -48,23 +51,45 @@ func (m *Map) Range(f func(key, value interface{}) bool) {
 	m.syncMap.Range(f)
 }
 
-// Store sets the value for a key with default expiration.
-func (m *Map) Store(key, value interface{}) {
-	m.StoreWithExpire(key, value, m.defaultExpire)
-}
-
-// StoreWithExpire sets the value for a key with expiration.
-func (m *Map) StoreWithExpire(key, value interface{}, expire time.Duration) {
+// Store sets the value for a key with default expiration and some options.
+func (m *Map) Store(key, value interface{}, opts ...Option) {
+	opt := &Options{
+		Expire:      m.defaultExpire,
+		ExpiredFunc: func() {},
+	}
+	for _, optFunc := range opts {
+		optFunc(opt)
+	}
 	m.syncMap.Store(key, value)
-	m.setExpire(key, expire)
+	m.setExpire(key, opt.Expire, opt.ExpiredFunc)
 }
 
-func (m *Map) setExpire(key interface{}, expire time.Duration) {
+func (m *Map) setExpire(key interface{}, expire time.Duration, f func()) {
 	if expire == 0 {
 		return
 	}
 	go func() {
 		<-time.Tick(expire)
 		m.syncMap.Delete(key)
+		f()
 	}()
+}
+
+type Options struct {
+	Expire      time.Duration
+	ExpiredFunc func()
+}
+
+type Option func(*Options)
+
+func Expire(expire time.Duration) Option {
+	return func(args *Options) {
+		args.Expire = expire
+	}
+}
+
+func ExpiredFunc(f func()) Option {
+	return func(args *Options) {
+		args.ExpiredFunc = f
+	}
 }
