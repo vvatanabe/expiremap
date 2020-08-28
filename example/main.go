@@ -24,7 +24,7 @@ func main() {
 	}
 	fmt.Println("key1:", v)
 
-	// StoreWithExpire sets the value for a key with expiration.
+	// Store with expire sets the value for a key with expiration.
 	m.Store("key2", "bar", expiremap.Expire(time.Second/2))
 	v, ok = m.Load("key2")
 	if !ok {
